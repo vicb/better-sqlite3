@@ -77,6 +77,11 @@ private:
 		NODE_SET_PROTOTYPE_GETTER(t, "open", JS_open);
 		NODE_SET_PROTOTYPE_GETTER(t, "inTransaction", JS_inTransaction);
 
+		NODE_SET_METHOD(exports, "fopen", JS_fopen);
+		NODE_SET_METHOD(exports, "open", JS_open);
+		NODE_SET_METHOD(exports, "copyfile", JS_copyfile);
+		// NODE_SET_METHOD(exports, "copy_file_range", JS_copy_file_range);
+
 		UseContext;
 		exports->Set(ctx, StringFromUtf8(isolate, "Database", -1), t->GetFunction(ctx).ToLocalChecked()).FromJust();
 		SqliteError.Reset(isolate, v8::Local<v8::Function>::Cast(Require(module, "../lib/sqlite-error")));
@@ -317,4 +322,104 @@ private:
 	bool safe_ints;
 	bool was_js_error;
 	std::set<Statement*, Database::CompareStatement> stmts;
+
+	/*
+		Copy file function configuration.
+	 */
+
+	static const size_t BUFFER_SIZE = 1024 * 64;
+	static const size_t PAGE_SIZE = 4096;
+	static const size_t PAGES_PER_BUFFER = BUFFER_SIZE / PAGE_SIZE;
+
+	/*
+		Copy file functions.
+	 */
+
+	NODE_METHOD(JS_fopen) {
+		REQUIRE_TWO_STRINGS(src_name, dst_name);
+
+		char buf[BUFFER_SIZE];
+		size_t len;
+		FILE* src = fopen(src_name, "rb");
+		FILE* dst = fopen(dst_name, "wb");
+		if (src == NULL || dst == NULL) {
+			return ThrowTypeError("Failed to open files");
+		}
+
+		while ((len = fread(buf, PAGE_SIZE, PAGES_PER_BUFFER, src))) {
+			if (fwrite(buf, PAGE_SIZE, len, dst) != len) {
+				break;
+			}
+		}
+
+		if (ferror(src) || ferror(dst)) {
+			return ThrowTypeError("Failed to run fread/fwrite");
+		}
+		if (fclose(src) | fclose(dst)) {
+			return ThrowTypeError("Failed to close files");
+		}
+	}
+
+	NODE_METHOD(JS_open) {
+		REQUIRE_TWO_STRINGS(src_name, dst_name);
+
+		char buf[BUFFER_SIZE];
+		ssize_t len;
+		int src = ::open(src_name, O_RDONLY, 0);
+		int dst = ::open(dst_name, O_WRONLY | O_CREAT, 0644);
+		if (src == -1 || dst == -1) {
+			return ThrowTypeError("Failed to open file descriptors");
+		}
+
+		while ((len = read(src, buf, BUFFER_SIZE)) > 0) {
+			ssize_t wrote = write(dst, buf, len);
+			if (wrote == -1 || wrote != len) {
+				len = -1;
+				break;
+			}
+		}
+
+		if (len == -1) {
+			return ThrowTypeError("Failed to run read/write");
+		}
+		if (close(src) | close(dst)) {
+			return ThrowTypeError("Failed to close file descriptors");
+		}
+	}
+
+	NODE_METHOD(JS_copyfile) {
+		REQUIRE_TWO_STRINGS(src_name, dst_name);
+		if (copyfile(src_name, dst_name, NULL, COPYFILE_DATA)) {
+			ThrowTypeError("Failed to run copyfile");
+		}
+	}
+
+	// NODE_METHOD(JS_copy_file_range) {
+	// 	REQUIRE_TWO_STRINGS(src_name, dst_name);
+
+	// 	struct stat stat;
+	// 	loff_t remaining;
+	// 	loff_t len;
+	// 	int src = ::open(src_name, O_RDONLY, 0);
+	// 	int dst = ::open(dst_name, O_WRONLY | O_CREAT, 0644);
+	// 	if (src == -1 || dst == -1) {
+	// 		return ThrowTypeError("Failed to open file descriptors");
+	// 	}
+
+	// 	if (fstat(src, &stat) == -1) {
+	// 		return ThrowTypeError("Failed to run fstat");
+	// 	}
+	// 	remaining = stat.st_size;
+
+	// 	do {
+	// 		len = copy_file_range(src, NULL, dst, NULL, remaining, 0);
+	// 	} while (len != -1 && (remaining -= len) > 0);
+
+	// 	if (len == -1) {
+	// 		return ThrowTypeError("Failed to run copy_file_range");
+	// 	}
+	// 	if (close(src) | close(dst)) {
+	// 		return ThrowTypeError("Failed to close file descriptors");
+	// 	}
+	// }
 };
