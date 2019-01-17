@@ -1,4 +1,4 @@
 'use strict';
-const native = require('../.');
+const native = require('../build/better_sqlite3.node');
 
-native.open('../../api-content-sqlite/content.db', 'copy.db');
+native.open('content.db', 'copy.db');

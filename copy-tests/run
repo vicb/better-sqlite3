@@ -1,0 +1,22 @@
+#!/usr/bin/env bash
+
+pushd "$(dirname "$0")"
+for file in *.js
+do
+  rm -rf copy.db
+  printf "%s\t(%s)\n" "`{ gtime -f "%es / %P" node "$file"; } 2>&1`" "${file%.*}"
+done
+rm -rf copy.db
+
+
+# 110.43s / 14%	(copyFile.js)
+# 109.09s / 14%	(copyFileSync.js)
+# 130.74s / 95%	(fstream.js)
+# 81.60s / 64%	(fwrite.js)
+# 80.54s / 65%	(fwriteElements.js)
+# 85.66s / 83%	(pipe.js)
+# 107.59s / 14%	(copyfile_direct.js)
+
+
+# compare different values of BUFFER_SIZE (for open and fopen)
+# try PAGE_SIZE = 1 (for fopen)

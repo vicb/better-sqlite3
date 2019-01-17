@@ -1,12 +1,10 @@
 #hdr
-#define _GNU_SOURCE
-#include <unistd.h>
 #include <fcntl.h>
-#include <sys/types.h>
-#include <sys/socket.h>
-#include <sys/uio.h>
+#include <unistd.h>
+#include <cstdio>
+#include <ios>
+#include <fstream>
 #include <copyfile.h>
-#include <iostream>
 #include <climits>
 #include <cstring>
 #include <string>

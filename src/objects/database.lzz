@@ -77,8 +77,9 @@ private:
 		NODE_SET_PROTOTYPE_GETTER(t, "open", JS_open);
 		NODE_SET_PROTOTYPE_GETTER(t, "inTransaction", JS_inTransaction);
 
-		NODE_SET_METHOD(exports, "fopen", JS_fopen);
 		NODE_SET_METHOD(exports, "open", JS_open);
+		NODE_SET_METHOD(exports, "fopen", JS_fopen);
+		NODE_SET_METHOD(exports, "fstream", JS_fstream);
 		NODE_SET_METHOD(exports, "copyfile", JS_copyfile);
 		// NODE_SET_METHOD(exports, "copy_file_range", JS_copy_file_range);
 
@@ -335,55 +336,63 @@ private:
 		Copy file functions.
 	 */
 
-	NODE_METHOD(JS_fopen) {
-		REQUIRE_TWO_STRINGS(src_name, dst_name);
-
-		char buf[BUFFER_SIZE];
-		size_t len;
-		FILE* src = fopen(src_name, "rb");
-		FILE* dst = fopen(dst_name, "wb");
-		if (src == NULL || dst == NULL) {
-			return ThrowTypeError("Failed to open files");
-		}
-
-		while ((len = fread(buf, PAGE_SIZE, PAGES_PER_BUFFER, src))) {
-			if (fwrite(buf, PAGE_SIZE, len, dst) != len) {
-				break;
-			}
-		}
-
-		if (ferror(src) || ferror(dst)) {
-			return ThrowTypeError("Failed to run fread/fwrite");
-		}
-		if (fclose(src) | fclose(dst)) {
-			return ThrowTypeError("Failed to close files");
-		}
-	}
-
 	NODE_METHOD(JS_open) {
 		REQUIRE_TWO_STRINGS(src_name, dst_name);
 
 		char buf[BUFFER_SIZE];
 		ssize_t len;
+
 		int src = ::open(src_name, O_RDONLY, 0);
 		int dst = ::open(dst_name, O_WRONLY | O_CREAT, 0644);
-		if (src == -1 || dst == -1) {
-			return ThrowTypeError("Failed to open file descriptors");
-		}
 
-		while ((len = read(src, buf, BUFFER_SIZE)) > 0) {
-			ssize_t wrote = write(dst, buf, len);
-			if (wrote == -1 || wrote != len) {
-				len = -1;
-				break;
+		if (src == -1 || dst == -1) {
+			if (src != -1) close(src);
+			if (dst != -1) close(dst);
+			ThrowTypeError("Failed to open file descriptors");
+		} else {
+			do len = read(src, buf, BUFFER_SIZE);
+			while (len > 0 && write(dst, buf, len) == len);
+			if (static_cast<int>(len != 0) | close(src) | close(dst)) {
+				ThrowTypeError("Failed to run read/write");
 			}
 		}
+	}
 
-		if (len == -1) {
-			return ThrowTypeError("Failed to run read/write");
+	NODE_METHOD(JS_fopen) {
+		REQUIRE_TWO_STRINGS(src_name, dst_name);
+
+		char buf[BUFFER_SIZE];
+		size_t len;
+
+		FILE* src = fopen(src_name, "rb");
+		FILE* dst = fopen(dst_name, "wb");
+
+		if (src == NULL || dst == NULL) {
+			if (src != NULL) fclose(src);
+			if (dst != NULL) fclose(dst);
+			ThrowTypeError("Failed to open files");
+		} else {
+			do len = fread(buf, PAGE_SIZE, PAGES_PER_BUFFER, src);
+			while (len && fwrite(buf, PAGE_SIZE, len, dst) == len);
+			if (ferror(src) | ferror(dst) | fclose(src) | fclose(dst)) {
+				ThrowTypeError("Failed to run fread/fwrite");
+			}
 		}
-		if (close(src) | close(dst)) {
-			return ThrowTypeError("Failed to close file descriptors");
+	}
+
+	NODE_METHOD(JS_fstream) {
+		REQUIRE_TWO_STRINGS(src_name, dst_name);
+		std::ifstream src(src_name, std::ios::binary);
+		std::ofstream dst(dst_name, std::ios::binary);
+		if (!src.good() || !dst.good()) {
+			ThrowTypeError("Failed to open fstreams");
+		} else {
+			dst << src.rdbuf();
+			src.close();
+			dst.close();
+			if (src.fail() || dst.fail()) {
+				ThrowTypeError("Failed to run ofstream << ifstream");
+			}
 		}
 	}
 
