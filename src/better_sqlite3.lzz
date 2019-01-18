@@ -6,6 +6,7 @@
 #include <fstream>
 #include <copyfile.h>
 #include <climits>
+#include <cstdio>
 #include <cstring>
 #include <string>
 #include <vector>
@@ -28,6 +29,7 @@ NODE_MODULE(better_sqlite3, RegisterModule);
 #insert "objects/database.lzz"
 #insert "objects/statement.lzz"
 #insert "objects/statement-iterator.lzz"
+#insert "objects/backup.lzz"
 #insert "util/custom-function.lzz"
 #insert "util/custom-aggregate.lzz"
 #insert "util/data.lzz"
@@ -41,4 +43,5 @@ void RegisterModule(v8::Local<v8::Object> exports, v8::Local<v8::Object> module)
 	Database::Init(isolate, exports, module);
 	Statement::Init(isolate, exports, module);
 	StatementIterator::Init(isolate, exports, module);
+	Backup::Init(isolate, exports, module);
 }
