@@ -18,3 +18,14 @@ rm -rf copy.db
 #
 # 82.40s / 62%  (c::fopen)
 # 78.69s / 43%  (posix::open)
+
+# Supposedly 'fopen' is faster than 'open' for small operations (e.g., line by
+# line) because it buffers output, where 'open' doesn't. But for large loads,
+# 'open' is faster because buffering doesn't accomplish anything in that case.
+#
+# Streaming also seems to be competitive in speed, but has higher CPU usage,
+# which seems to be a trade-off for the ability to do other things concurrently.
+#
+# BSD's copyfile is somehow slower than simple read/write operations (not sure
+# about the reason), but is able to save on CPU usage (probably by bypassing the
+# copy into user space).
