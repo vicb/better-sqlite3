@@ -8,15 +8,18 @@ do
 done
 rm -rf copy.db
 
-
-# 110.43s / 14%	(copyFile.js)
-# 109.09s / 14%	(copyFileSync.js)
-# 130.74s / 95%	(fstream.js)
-# 81.60s / 64%	(fwrite.js)
-# 80.54s / 65%	(fwriteElements.js)
-# 85.66s / 83%	(pipe.js)
-# 107.59s / 14%	(copyfile_direct.js)
-
+# 0.07s / 84%   (linux::copy_file_range)
+#
+# 106.25s / 14% (bsd::copyfile)
+# 111.49s / 14% (fs::copyFile)
+# 110.19s / 14% (fs::copyFileSync)
+#
+# 128.81s / 95% (c++::fstream)
+# 85.77s / 80%  (fs::stream)
+# 81.18s / 81%  (db::backup)
+#
+# 82.40s / 62%  (c::fopen)
+# 78.69s / 43%  (posix::open)
 
 # compare different values of BUFFER_SIZE (for open and fopen)
 # try PAGE_SIZE = 1 (for fopen)
