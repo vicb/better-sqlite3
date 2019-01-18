@@ -18,6 +18,3 @@ rm -rf copy.db
 #
 # 82.40s / 62%  (c::fopen)
 # 78.69s / 43%  (posix::open)
-
-# compare different values of BUFFER_SIZE (for open and fopen)
-# try PAGE_SIZE = 1 (for fopen)
