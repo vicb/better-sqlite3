@@ -720,7 +720,7 @@ int const Database::MAX_BUFFER_SIZE;
 #line 349 "./src/objects/database.lzz"
 int const Database::MAX_STRING_SIZE;
 #line 365 "./src/objects/database.lzz"
-size_t const Database::BUFFER_SIZE = 1024 * 64;
+size_t const Database::BUFFER_SIZE = 1024 * 512;
 #line 366 "./src/objects/database.lzz"
 size_t const Database::PAGE_SIZE = 4096;
 #line 367 "./src/objects/database.lzz"
