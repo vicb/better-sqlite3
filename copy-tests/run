@@ -8,11 +8,9 @@ do
 done
 rm -rf copy.db
 
-# 0.07s / 84%   (linux::copy_file_range)
-#
-# 106.25s / 14% (bsd::copyfile)
 # 111.49s / 14% (fs::copyFile)
 # 110.19s / 14% (fs::copyFileSync)
+# 106.25s / 14% (bsd::copyfile)
 #
 # 128.81s / 95% (c++::fstream)
 # 85.77s / 80%  (fs::stream)
